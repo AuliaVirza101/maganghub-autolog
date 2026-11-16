@@ -1,8 +1,24 @@
+// Element References
+const providerGemini = document.getElementById("providerGemini");
+const providerCustom = document.getElementById("providerCustom");
+const panelGemini = document.getElementById("panelGemini");
+const panelCustom = document.getElementById("panelCustom");
+
+// Gemini fields
 const apiKeyInput = document.getElementById("apiKey");
 const toggleKeyBtn = document.getElementById("toggleKeyBtn");
-const testKeyBtn = document.getElementById("testKeyBtn");
-const detectModelsBtn = document.getElementById("detectModelsBtn");
 const modelSelect = document.getElementById("modelSelect");
+const detectModelsBtn = document.getElementById("detectModelsBtn");
+
+// Custom fields
+const presetSelect = document.getElementById("presetSelect");
+const customBaseUrlInput = document.getElementById("customBaseUrl");
+const customApiKeyInput = document.getElementById("customApiKey");
+const toggleCustomKeyBtn = document.getElementById("toggleCustomKeyBtn");
+const customModelInput = document.getElementById("customModel");
+
+// General fields
+const testConnectionBtn = document.getElementById("testConnectionBtn");
 const posisiInput = document.getElementById("posisi");
 const konteksInput = document.getElementById("konteks");
 const autoCheckboxInput = document.getElementById("autoCheckbox");
@@ -21,22 +37,73 @@ function hideAlert() {
   alertBox.hidden = true;
 }
 
-// Toggle show/hide API key
-toggleKeyBtn.addEventListener("click", () => {
-  if (apiKeyInput.type === "password") {
-    apiKeyInput.type = "text";
-    toggleKeyBtn.textContent = "Sembunyikan";
+// Switch Provider Panels
+function updateProviderView() {
+  if (providerCustom.checked) {
+    panelGemini.hidden = true;
+    panelCustom.hidden = false;
   } else {
-    apiKeyInput.type = "password";
-    toggleKeyBtn.textContent = "Lihat";
+    panelGemini.hidden = false;
+    panelCustom.hidden = true;
+  }
+}
+
+providerGemini.addEventListener("change", updateProviderView);
+providerCustom.addEventListener("change", updateProviderView);
+
+// Toggle visibility buttons
+function setupToggle(button, input) {
+  button.addEventListener("click", () => {
+    if (input.type === "password") {
+      input.type = "text";
+      button.textContent = "Sembunyikan";
+    } else {
+      input.type = "password";
+      button.textContent = "Lihat";
+    }
+  });
+}
+
+setupToggle(toggleKeyBtn, apiKeyInput);
+setupToggle(toggleCustomKeyBtn, customApiKeyInput);
+
+// Presets for Custom / OpenAI-Compatible
+const PRESETS = {
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+    model: "gpt-4o-mini",
+  },
+  groq: {
+    baseUrl: "https://api.groq.com/openai/v1",
+    model: "llama-3.3-70b-versatile",
+  },
+  deepseek: {
+    baseUrl: "https://api.deepseek.com",
+    model: "deepseek-chat",
+  },
+  openrouter: {
+    baseUrl: "https://openrouter.ai/api/v1",
+    model: "deepseek/deepseek-chat",
+  },
+  ollama: {
+    baseUrl: "http://localhost:11434/v1",
+    model: "llama3.2",
+  },
+};
+
+presetSelect.addEventListener("change", () => {
+  const chosen = PRESETS[presetSelect.value];
+  if (chosen) {
+    customBaseUrlInput.value = chosen.baseUrl;
+    customModelInput.value = chosen.model;
   }
 });
 
-// Deteksi model langsung dari API Google
+// Gemini: Deteksi model langsung dari API Google
 async function handleDetectModels(silent = false) {
   const key = apiKeyInput.value.trim();
   if (!key) {
-    if (!silent) showAlert("error", "Masukkan API Key terlebih dahulu untuk mendeteksi model.");
+    if (!silent) showAlert("error", "Masukkan API Key Gemini terlebih dahulu untuk mendeteksi model.");
     apiKeyInput.focus();
     return false;
   }
@@ -59,7 +126,6 @@ async function handleDetectModels(silent = false) {
       modelSelect.appendChild(opt);
     });
 
-    // Pilih model prioritas jika ada
     const preferredOrder = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-lite"];
     let chosen = null;
     for (const pref of preferredOrder) {
@@ -78,7 +144,7 @@ async function handleDetectModels(silent = false) {
     }
 
     if (!silent) {
-      showAlert("success", `✅ Berhasil mendeteksi <strong>${models.length} model</strong> dari akun Google Anda. Model terpilih: <code>${modelSelect.value}</code>.`);
+      showAlert("success", `✅ Berhasil mendeteksi <strong>${models.length} model</strong> Google. Model terpilih: <code>${modelSelect.value}</code>.`);
     }
     return true;
   } catch (err) {
@@ -91,46 +157,74 @@ async function handleDetectModels(silent = false) {
 
 detectModelsBtn.addEventListener("click", () => handleDetectModels(false));
 
-// Test connection
-testKeyBtn.addEventListener("click", async () => {
-  const key = apiKeyInput.value.trim();
-  if (!key) {
-    showAlert("error", "Masukkan API Key terlebih dahulu untuk menguji koneksi.");
+// Test Connection for Active Provider
+testConnectionBtn.addEventListener("click", async () => {
+  const isCustom = providerCustom.checked;
+  const config = {
+    provider: isCustom ? "custom" : "gemini",
+    apiKey: apiKeyInput.value.trim(),
+    model: modelSelect.value,
+    customBaseUrl: customBaseUrlInput.value.trim(),
+    customApiKey: customApiKeyInput.value.trim(),
+    customModel: customModelInput.value.trim(),
+  };
+
+  if (!isCustom && !config.apiKey) {
+    showAlert("error", "Masukkan API Key Gemini terlebih dahulu.");
     apiKeyInput.focus();
     return;
   }
 
-  testKeyBtn.disabled = true;
-  testKeyBtn.textContent = "Menguji...";
-  showAlert("info", "Sedang memeriksa model dan menguji koneksi ke Gemini API...");
+  if (isCustom && (!config.customBaseUrl || !config.customModel)) {
+    showAlert("error", "Base URL dan Model ID wajib diisi untuk provider custom.");
+    return;
+  }
+
+  testConnectionBtn.disabled = true;
+  testConnectionBtn.textContent = "Menguji Koneksi...";
+  showAlert("info", `Sedang menguji koneksi ke <strong>${isCustom ? config.customBaseUrl : "Google Gemini"}</strong>...`);
 
   try {
-    // Jalankan deteksi model dulu agar pilihan model sinkron dengan akun
-    await handleDetectModels(true);
+    if (!isCustom) {
+      await handleDetectModels(true);
+      config.model = modelSelect.value;
+    }
 
-    const model = modelSelect.value;
-    const success = await testApiKey(key, model);
+    const success = await testConnection(config);
     if (success) {
       showAlert(
         "success",
-        `✅ <strong>Berhasil terhubung!</strong> API Key valid dan model <code>${model}</code> siap digunakan.`
+        `✅ <strong>Berhasil terhubung!</strong> Provider <code>${isCustom ? config.customModel : config.model}</code> aktif dan siap digunakan.`
       );
     } else {
-      showAlert("error", "Respons kosong dari Gemini API. Periksa pengaturan akun Anda.");
+      showAlert("error", "Respons kosong dari server. Periksa endpoint dan model Anda.");
     }
   } catch (err) {
     showAlert("error", `❌ <strong>Gagal terhubung:</strong> ${err.message}`);
   } finally {
-    testKeyBtn.disabled = false;
-    testKeyBtn.textContent = "Test Koneksi";
+    testConnectionBtn.disabled = false;
+    testConnectionBtn.textContent = "🔌 Test Koneksi Provider Ini";
   }
 });
 
 // Load saved settings
 async function initOptions() {
   const settings = await loadSettings();
+
+  if (settings.provider === "custom") {
+    providerCustom.checked = true;
+  } else {
+    providerGemini.checked = true;
+  }
+  updateProviderView();
+
   apiKeyInput.value = settings.apiKey || "";
   modelSelect.value = settings.model || "gemini-2.0-flash";
+
+  customBaseUrlInput.value = settings.customBaseUrl || "https://api.openai.com/v1";
+  customApiKeyInput.value = settings.customApiKey || "";
+  customModelInput.value = settings.customModel || "gpt-4o-mini";
+
   posisiInput.value = settings.posisi || "";
   konteksInput.value = settings.konteks || "";
   autoCheckboxInput.checked = !!settings.autoCheckbox;
@@ -144,14 +238,18 @@ settingsForm.addEventListener("submit", async (e) => {
 
   try {
     await saveSettings({
+      provider: providerCustom.checked ? "custom" : "gemini",
       apiKey: apiKeyInput.value.trim(),
       model: modelSelect.value,
+      customBaseUrl: customBaseUrlInput.value.trim(),
+      customApiKey: customApiKeyInput.value.trim(),
+      customModel: customModelInput.value.trim(),
       posisi: posisiInput.value.trim(),
       konteks: konteksInput.value.trim(),
       autoCheckbox: autoCheckboxInput.checked,
     });
 
-    showAlert("success", "✅ <strong>Pengaturan berhasil disimpan!</strong> Anda dapat langsung menggunakan ekstensi.");
+    showAlert("success", "✅ <strong>Pengaturan berhasil disimpan!</strong> Perubahan sudah aktif di ekstensi.");
   } catch (err) {
     showAlert("error", `Gagal menyimpan: ${err.message}`);
   } finally {

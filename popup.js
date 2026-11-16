@@ -104,8 +104,16 @@ async function init() {
   }
 
   const warnings = [];
-  if (!settings.apiKey) {
-    warnings.push('API Key Gemini belum diatur. <a href="#" id="linkOptions">Buka Pengaturan</a> untuk memasukkan key.');
+
+  // Validasi konfigurasi provider
+  if (settings.provider === "custom") {
+    if (!settings.customBaseUrl || !settings.customModel) {
+      warnings.push('Pengaturan Custom Provider belum lengkap. <a href="#" id="linkOptions">Buka Pengaturan</a>.');
+    }
+  } else {
+    if (!settings.apiKey) {
+      warnings.push('API Key Gemini belum diatur. <a href="#" id="linkOptions">Buka Pengaturan</a> untuk memasukkan key.');
+    }
   }
 
   const tab = await getActiveTab();
@@ -114,11 +122,13 @@ async function init() {
     currentHost = new URL(tab?.url || "").hostname;
   } catch {}
 
+  const activeModelDisplay = settings.provider === "custom" ? settings.customModel : settings.model;
+
   if (currentHost === TARGET_HOST) {
-    tabStatus.innerHTML = `<span style="color:#10b981;">●</span> Terhubung ke Monev MagangHub`;
+    tabStatus.innerHTML = `<span style="color:#10b981;">●</span> Monev Terhubung (${activeModelDisplay})`;
   } else {
-    tabStatus.innerHTML = `<span style="color:#f59e0b;">●</span> Tab aktif bukan Monev MagangHub`;
-    warnings.push("Buka halaman logbook/tambah laporan di <strong>monev.maganghub.kemnaker.go.id</strong>.");
+    tabStatus.innerHTML = `<span style="color:#f59e0b;">●</span> Tab bukan Monev (${activeModelDisplay})`;
+    warnings.push("Buka form 'Tambah Laporan' di <strong>monev.maganghub.kemnaker.go.id</strong>.");
   }
 
   if (warnings.length > 0) {
@@ -146,7 +156,7 @@ async function handleGenerate() {
 
   hideStatus();
   generateBtn.disabled = true;
-  generateBtnText.textContent = "Menyusun dengan Gemini...";
+  generateBtnText.textContent = "AI sedang menyusun laporan...";
 
   try {
     const tab = await getActiveTab();
