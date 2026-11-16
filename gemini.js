@@ -5,7 +5,7 @@ const DEFAULT_SETTINGS = {
   provider: "gemini", // "gemini" | "custom"
   // Gemini settings:
   apiKey: "",
-  model: "gemini-2.0-flash",
+  model: "gemini-3.5-flash",
   // Custom / OpenAI-compatible settings:
   customBaseUrl: "https://api.openai.com/v1",
   customApiKey: "",
@@ -15,13 +15,6 @@ const DEFAULT_SETTINGS = {
   konteks: "Pengembangan sistem web dan backend",
   autoCheckbox: true,
 };
-
-// Daftar model bawaan yang 100% aman di Free Tier Google AI Studio
-const FREE_TIER_GEMINI_MODELS = [
-  { id: "gemini-2.0-flash", name: "⚡ Gemini 2.0 Flash [100% Free Tier - Rekomendasi]" },
-  { id: "gemini-2.0-flash-lite", name: "⚡ Gemini 2.0 Flash Lite [100% Free Tier - Ringan]" },
-  { id: "gemini-1.5-flash-latest", name: "⚡ Gemini 1.5 Flash Latest [100% Free Tier]" },
-];
 
 async function loadSettings() {
   const stored = await chrome.storage.local.get(DEFAULT_SETTINGS);
@@ -73,7 +66,7 @@ function cleanOutput(text) {
 }
 
 // -------------------------------------------------------------
-// 1. GOOGLE GEMINI ENGINE (KHUSUS FREE TIER)
+// 1. GOOGLE GEMINI ENGINE (KHUSUS FREE TIER & FLASH)
 // -------------------------------------------------------------
 
 async function fetchAvailableModels(apiKey) {
@@ -92,47 +85,64 @@ async function fetchAvailableModels(apiKey) {
   }
 
   const models = resJson.models || [];
-  
-  // FILTER KETAT: HANYA model FLASH (Free Tier) dan generateContent.
-  // Buang semua model berat/berbayar (pro, ultra), embedding, aqa, tts, imagen, audio/video.
-  const freeModels = models
-    .filter((m) => {
-      const id = (m.name || "").replace(/^models\//, "").toLowerCase();
-      const canGenerate = m.supportedGenerationMethods?.includes("generateContent");
-      const isFlash = id.includes("flash");
-      const isExcluded =
-        id.includes("embedding") ||
-        id.includes("aqa") ||
-        id.includes("imagen") ||
-        id.includes("pro") ||
-        id.includes("ultra") ||
-        id.includes("live") ||
-        id.includes("tts");
-      return canGenerate && isFlash && !isExcluded;
-    })
-    .map((m) => {
-      const id = m.name.replace(/^models\//, "");
-      const cleanName = m.displayName ? m.displayName.replace(/Gemini\s*/i, "") : id;
-      return {
-        id,
-        name: `⚡ Gemini ${cleanName} [Free Tier]`,
-      };
-    });
 
-  return freeModels.length > 0 ? freeModels : FREE_TIER_GEMINI_MODELS;
+  // Filter: ambil yang mendukung generateContent dan teks/chat (buang embedding, imagen, tts, aqa)
+  const candidateModels = models.filter((m) => {
+    const id = (m.name || "").replace(/^models\//, "").toLowerCase();
+    const canGenerate = m.supportedGenerationMethods?.includes("generateContent");
+    const isExcluded =
+      id.includes("embedding") ||
+      id.includes("aqa") ||
+      id.includes("imagen") ||
+      id.includes("tts") ||
+      id.includes("audio") ||
+      id.includes("video") ||
+      id.includes("live");
+    return canGenerate && !isExcluded;
+  });
+
+  // Urutkan prioritas: Flash models di atas (3.5, 3.8, 3.6, flash-lite, 2.0)
+  function scoreModel(id) {
+    if (id.includes("3.5-flash")) return 100;
+    if (id.includes("3.8-flash")) return 95;
+    if (id.includes("3.6-flash")) return 90;
+    if (id.includes("flash-lite")) return 85;
+    if (id.includes("2.0-flash")) return 80;
+    if (id.includes("flash")) return 70;
+    return 10;
+  }
+
+  candidateModels.sort((a, b) => {
+    const idA = a.name.replace(/^models\//, "").toLowerCase();
+    const idB = b.name.replace(/^models\//, "").toLowerCase();
+    return scoreModel(idB) - scoreModel(idA);
+  });
+
+  return candidateModels.map((m) => {
+    const id = m.name.replace(/^models\//, "");
+    const isTopFlash = scoreModel(id.toLowerCase()) >= 80;
+    const badge = isTopFlash ? "⚡ [Rekomendasi Cepat]" : "[Tersedia]";
+    return {
+      id,
+      name: `${id} ${badge}`,
+    };
+  });
 }
 
-async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, temperature = 0.7, timeoutMs = 30000 }) {
+async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, temperature = 0.7, timeoutMs = 45000 }) {
   if (!apiKey) {
     throw new AIError("API Key Gemini belum diatur. Silakan atur di menu Pengaturan.");
   }
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+
+  // Pada model reasoning (Gemini 2.5/3.8), set thinkingBudget: 0 agar tidak timeout/berpikir berlebihan
   const payload = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
     generationConfig: {
       temperature,
+      thinkingConfig: { thinkingBudget: 0 },
       ...(schema ? { responseMimeType: "application/json", responseSchema: schema } : {}),
     },
   };
@@ -151,31 +161,54 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
     resJson = await response.json().catch(() => ({}));
   } catch (err) {
     if (err.name === "AbortError") {
-      throw new AIError(`Model ${model} timeout (terlalu lama merespons).`, true);
+      throw new AIError(`Model "${model}" terlalu lama merespons (timeout). Coba pilih model Flash lain.`, true);
     }
     throw new AIError("Koneksi gagal. Periksa koneksi internet Anda.");
   } finally {
     clearTimeout(timer);
   }
 
+  // Jika thinkingConfig ditolak oleh model non-reasoning (400 Bad Request), coba ulang tanpa thinkingConfig
+  if (!response.ok && response.status === 400 && resJson?.error?.message?.includes("thinking")) {
+    delete payload.generationConfig.thinkingConfig;
+    const retryRes = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => null);
+
+    if (retryRes && retryRes.ok) {
+      response = retryRes;
+      resJson = await retryRes.json().catch(() => ({}));
+    }
+  }
+
   if (!response.ok) {
     const errorMsg = resJson?.error?.message || response.statusText;
     if (response.status === 400 || response.status === 401) {
-      throw new AIError("API Key Gemini tidak valid. Cek kembali key di Pengaturan.");
+      throw new AIError(`API Key Gemini tidak valid atau parameter tidak didukung: ${errorMsg}`);
     }
     if (response.status === 403) {
       throw new AIError("Akses API ditolak (403). Pastikan Generative Language API aktif.");
     }
     if (response.status === 404) {
-      throw new AIError(`Model "${model}" tidak aktif di akun ini. Silakan klik Deteksi Model Free Tier.`, true);
+      throw new AIError(`Model "${model}" tidak aktif atau sudah didepresiasi oleh Google. Coba pilih model Flash lain.`, true);
     }
     if (response.status === 429) {
-      throw new AIError("Batas kuota gratis Gemini tercapai sementara. Tunggu 1 menit lalu coba lagi.", true);
+      throw new AIError("Batas kuota gratis Gemini tercapai sementara. Tunggu sebentar lalu coba lagi.", true);
     }
     throw new AIError(`Gemini Error (${response.status}): ${errorMsg}`);
   }
 
-  const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  // Ambil teks dari parts (filter out thought token jika ada)
+  const parts = resJson?.candidates?.[0]?.content?.parts || [];
+  const textWithoutThoughts = parts
+    .filter((p) => !p.thought)
+    .map((p) => p.text || "")
+    .join("")
+    .trim();
+
+  const rawText = textWithoutThoughts || parts.map((p) => p.text || "").join("").trim();
   if (!rawText) {
     throw new AIError("Gemini tidak mengembalikan teks output.", true);
   }
@@ -282,15 +315,20 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
       userPrompt,
     });
   } else {
-    // Mode Google Gemini (Hanya mencoba model Free Tier)
+    // Mode Google Gemini (Coba model terpilih, jika gagal coba fallback)
     const modelsToTry = [
-      settings.model || "gemini-2.0-flash",
-      "gemini-2.0-flash-lite",
-      "gemini-1.5-flash-latest",
-    ];
+      settings.model,
+      "gemini-3.5-flash",
+      "gemini-3.8-flash",
+      "gemini-3.6-flash",
+      "gemini-flash-lite-latest",
+      "gemini-2.0-flash",
+    ].filter(Boolean);
 
+    const uniqueModels = [...new Set(modelsToTry)];
     let lastError = null;
-    for (const model of modelsToTry) {
+
+    for (const model of uniqueModels) {
       try {
         rawJsonText = await callGeminiApi({
           apiKey: settings.apiKey,
@@ -337,7 +375,7 @@ async function testConnection(settingsToTest) {
   } else {
     const raw = await callGeminiApi({
       apiKey,
-      model: model || "gemini-2.0-flash",
+      model: model || "gemini-3.5-flash",
       systemPrompt: "Jawablah dengan 1 kata: 'OK'.",
       userPrompt: "Halo",
     });

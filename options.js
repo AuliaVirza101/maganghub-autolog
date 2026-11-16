@@ -36,7 +36,7 @@ function hideAlert() {
   alertBox.hidden = true;
 }
 
-// Switch Provider Panels: Ganti tampilan formulir secara reaktif
+// Switch Provider Panels
 function updateProviderView() {
   const isCustom = providerSelect.value === "custom";
   if (isCustom) {
@@ -98,7 +98,7 @@ presetSelect.addEventListener("change", () => {
   }
 });
 
-// Gemini: Deteksi model HANYA yang Free Tier
+// Gemini: Deteksi model yang aktif di akun
 async function handleDetectModels(silent = false) {
   const key = apiKeyInput.value.trim();
   if (!key) {
@@ -111,7 +111,7 @@ async function handleDetectModels(silent = false) {
   try {
     const models = await fetchAvailableModels(key);
     if (models.length === 0) {
-      if (!silent) showAlert("error", "Tidak ada model Flash Free Tier yang ditemukan pada API Key ini.");
+      if (!silent) showAlert("error", "Tidak ada model yang dapat digunakan pada API Key ini.");
       return false;
     }
 
@@ -125,38 +125,28 @@ async function handleDetectModels(silent = false) {
       modelSelect.appendChild(opt);
     });
 
-    const preferredOrder = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"];
-    let chosen = null;
-    for (const pref of preferredOrder) {
-      if (models.some((m) => m.id === pref)) {
-        chosen = pref;
-        break;
-      }
-    }
-
-    if (chosen) {
-      modelSelect.value = chosen;
-    } else if (models.some((m) => m.id === currentVal)) {
+    // Jika opsi yang sebelumnya dipilih masih ada di list, pertahankan
+    if (models.some((m) => m.id === currentVal)) {
       modelSelect.value = currentVal;
     } else {
       modelSelect.value = models[0].id;
     }
 
     if (!silent) {
-      showAlert("success", `✅ Berhasil mendeteksi <strong>${models.length} model Free Tier</strong>. Model terpilih: <code>${modelSelect.value}</code>.`);
+      showAlert("success", `✅ Berhasil mendeteksi <strong>${models.length} model</strong>. Model aktif: <code>${modelSelect.value}</code>.`);
     }
     return true;
   } catch (err) {
     if (!silent) showAlert("error", `Gagal mendeteksi model: ${err.message}`);
     return false;
   } finally {
-    detectModelsBtn.textContent = "🔄 Deteksi Model Free Tier";
+    detectModelsBtn.textContent = "🔄 Deteksi Model Akun Saya";
   }
 }
 
 detectModelsBtn.addEventListener("click", () => handleDetectModels(false));
 
-// Test Connection for Active Provider
+// Test Connection for Active Provider (Menguji model yang SEDANG DIPILIH)
 testConnectionBtn.addEventListener("click", async () => {
   const isCustom = providerSelect.value === "custom";
   const config = {
@@ -174,6 +164,11 @@ testConnectionBtn.addEventListener("click", async () => {
     return;
   }
 
+  if (!isCustom && !config.model) {
+    showAlert("error", "Pilih salah satu model Gemini terlebih dahulu.");
+    return;
+  }
+
   if (isCustom && (!config.customBaseUrl || !config.customModel)) {
     showAlert("error", "Base URL dan Model ID wajib diisi untuk provider custom.");
     return;
@@ -181,22 +176,18 @@ testConnectionBtn.addEventListener("click", async () => {
 
   testConnectionBtn.disabled = true;
   testConnectionBtn.textContent = "Menguji Koneksi...";
-  showAlert("info", `Sedang menguji koneksi ke <strong>${isCustom ? config.customBaseUrl : "Google Gemini"}</strong>...`);
+  const targetName = isCustom ? config.customModel : config.model;
+  showAlert("info", `Sedang menguji koneksi ke model <strong>${targetName}</strong>...`);
 
   try {
-    if (!isCustom) {
-      await handleDetectModels(true);
-      config.model = modelSelect.value;
-    }
-
     const success = await testConnection(config);
     if (success) {
       showAlert(
         "success",
-        `✅ <strong>Berhasil terhubung!</strong> Provider <code>${isCustom ? config.customModel : config.model}</code> aktif dan siap digunakan.`
+        `✅ <strong>Koneksi Berhasil!</strong> Model <code>${targetName}</code> merespons dengan cepat dan siap digunakan.`
       );
     } else {
-      showAlert("error", "Respons kosong dari server. Periksa endpoint dan model Anda.");
+      showAlert("error", "Respons kosong dari server. Coba pilih model lain.");
     }
   } catch (err) {
     showAlert("error", `❌ <strong>Gagal terhubung:</strong> ${err.message}`);
@@ -214,7 +205,15 @@ async function initOptions() {
   updateProviderView();
 
   apiKeyInput.value = settings.apiKey || "";
-  modelSelect.value = settings.model || "gemini-2.0-flash";
+
+  // Set default model option jika dropdown masih kosong
+  if (modelSelect.options.length === 0 || !modelSelect.querySelector(`option[value="${settings.model}"]`)) {
+    const opt = document.createElement("option");
+    opt.value = settings.model || "gemini-3.5-flash";
+    opt.textContent = `${settings.model || "gemini-3.5-flash"} ⚡ [Tersimpan]`;
+    modelSelect.appendChild(opt);
+  }
+  modelSelect.value = settings.model || "gemini-3.5-flash";
 
   customBaseUrlInput.value = settings.customBaseUrl || "https://api.openai.com/v1";
   customApiKeyInput.value = settings.customApiKey || "";
@@ -244,7 +243,7 @@ settingsForm.addEventListener("submit", async (e) => {
       autoCheckbox: autoCheckboxInput.checked,
     });
 
-    showAlert("success", "✅ <strong>Pengaturan berhasil disimpan!</strong> Perubahan sudah aktif di ekstensi.");
+    showAlert("success", "✅ <strong>Pengaturan berhasil disimpan!</strong> Model terpilih sudah aktif di ekstensi.");
   } catch (err) {
     showAlert("error", `Gagal menyimpan: ${err.message}`);
   } finally {
