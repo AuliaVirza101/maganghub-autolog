@@ -1,6 +1,5 @@
 // Element References
-const providerGemini = document.getElementById("providerGemini");
-const providerCustom = document.getElementById("providerCustom");
+const providerSelect = document.getElementById("providerSelect");
 const panelGemini = document.getElementById("panelGemini");
 const panelCustom = document.getElementById("panelCustom");
 
@@ -37,21 +36,21 @@ function hideAlert() {
   alertBox.hidden = true;
 }
 
-// Switch Provider Panels
+// Switch Provider Panels: Ganti tampilan formulir secara reaktif
 function updateProviderView() {
-  if (providerCustom.checked) {
-    panelGemini.hidden = true;
-    panelCustom.hidden = false;
+  const isCustom = providerSelect.value === "custom";
+  if (isCustom) {
+    panelGemini.style.display = "none";
+    panelCustom.style.display = "flex";
   } else {
-    panelGemini.hidden = false;
-    panelCustom.hidden = true;
+    panelGemini.style.display = "flex";
+    panelCustom.style.display = "none";
   }
 }
 
-providerGemini.addEventListener("change", updateProviderView);
-providerCustom.addEventListener("change", updateProviderView);
+providerSelect.addEventListener("change", updateProviderView);
 
-// Toggle visibility buttons
+// Toggle visibility password
 function setupToggle(button, input) {
   button.addEventListener("click", () => {
     if (input.type === "password") {
@@ -67,7 +66,7 @@ function setupToggle(button, input) {
 setupToggle(toggleKeyBtn, apiKeyInput);
 setupToggle(toggleCustomKeyBtn, customApiKeyInput);
 
-// Presets for Custom / OpenAI-Compatible
+// Presets untuk Custom / OpenAI-Compatible
 const PRESETS = {
   openai: {
     baseUrl: "https://api.openai.com/v1",
@@ -99,7 +98,7 @@ presetSelect.addEventListener("change", () => {
   }
 });
 
-// Gemini: Deteksi model langsung dari API Google
+// Gemini: Deteksi model HANYA yang Free Tier
 async function handleDetectModels(silent = false) {
   const key = apiKeyInput.value.trim();
   if (!key) {
@@ -112,7 +111,7 @@ async function handleDetectModels(silent = false) {
   try {
     const models = await fetchAvailableModels(key);
     if (models.length === 0) {
-      if (!silent) showAlert("error", "Tidak ada model generateContent yang aktif pada API Key ini.");
+      if (!silent) showAlert("error", "Tidak ada model Flash Free Tier yang ditemukan pada API Key ini.");
       return false;
     }
 
@@ -126,7 +125,7 @@ async function handleDetectModels(silent = false) {
       modelSelect.appendChild(opt);
     });
 
-    const preferredOrder = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-lite"];
+    const preferredOrder = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"];
     let chosen = null;
     for (const pref of preferredOrder) {
       if (models.some((m) => m.id === pref)) {
@@ -144,14 +143,14 @@ async function handleDetectModels(silent = false) {
     }
 
     if (!silent) {
-      showAlert("success", `✅ Berhasil mendeteksi <strong>${models.length} model</strong> Google. Model terpilih: <code>${modelSelect.value}</code>.`);
+      showAlert("success", `✅ Berhasil mendeteksi <strong>${models.length} model Free Tier</strong>. Model terpilih: <code>${modelSelect.value}</code>.`);
     }
     return true;
   } catch (err) {
     if (!silent) showAlert("error", `Gagal mendeteksi model: ${err.message}`);
     return false;
   } finally {
-    detectModelsBtn.textContent = "🔄 Deteksi Model Akun Saya";
+    detectModelsBtn.textContent = "🔄 Deteksi Model Free Tier";
   }
 }
 
@@ -159,7 +158,7 @@ detectModelsBtn.addEventListener("click", () => handleDetectModels(false));
 
 // Test Connection for Active Provider
 testConnectionBtn.addEventListener("click", async () => {
-  const isCustom = providerCustom.checked;
+  const isCustom = providerSelect.value === "custom";
   const config = {
     provider: isCustom ? "custom" : "gemini",
     apiKey: apiKeyInput.value.trim(),
@@ -203,7 +202,7 @@ testConnectionBtn.addEventListener("click", async () => {
     showAlert("error", `❌ <strong>Gagal terhubung:</strong> ${err.message}`);
   } finally {
     testConnectionBtn.disabled = false;
-    testConnectionBtn.textContent = "🔌 Test Koneksi Provider Ini";
+    testConnectionBtn.textContent = "🔌 Test Koneksi AI";
   }
 });
 
@@ -211,11 +210,7 @@ testConnectionBtn.addEventListener("click", async () => {
 async function initOptions() {
   const settings = await loadSettings();
 
-  if (settings.provider === "custom") {
-    providerCustom.checked = true;
-  } else {
-    providerGemini.checked = true;
-  }
+  providerSelect.value = settings.provider || "gemini";
   updateProviderView();
 
   apiKeyInput.value = settings.apiKey || "";
@@ -238,7 +233,7 @@ settingsForm.addEventListener("submit", async (e) => {
 
   try {
     await saveSettings({
-      provider: providerCustom.checked ? "custom" : "gemini",
+      provider: providerSelect.value,
       apiKey: apiKeyInput.value.trim(),
       model: modelSelect.value,
       customBaseUrl: customBaseUrlInput.value.trim(),

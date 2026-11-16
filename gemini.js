@@ -16,6 +16,13 @@ const DEFAULT_SETTINGS = {
   autoCheckbox: true,
 };
 
+// Daftar model bawaan yang 100% aman di Free Tier Google AI Studio
+const FREE_TIER_GEMINI_MODELS = [
+  { id: "gemini-2.0-flash", name: "⚡ Gemini 2.0 Flash [100% Free Tier - Rekomendasi]" },
+  { id: "gemini-2.0-flash-lite", name: "⚡ Gemini 2.0 Flash Lite [100% Free Tier - Ringan]" },
+  { id: "gemini-1.5-flash-latest", name: "⚡ Gemini 1.5 Flash Latest [100% Free Tier]" },
+];
+
 async function loadSettings() {
   const stored = await chrome.storage.local.get(DEFAULT_SETTINGS);
   return { ...DEFAULT_SETTINGS, ...stored };
@@ -66,7 +73,7 @@ function cleanOutput(text) {
 }
 
 // -------------------------------------------------------------
-// 1. GOOGLE GEMINI ENGINE
+// 1. GOOGLE GEMINI ENGINE (KHUSUS FREE TIER)
 // -------------------------------------------------------------
 
 async function fetchAvailableModels(apiKey) {
@@ -85,15 +92,34 @@ async function fetchAvailableModels(apiKey) {
   }
 
   const models = resJson.models || [];
-  return models
-    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+  
+  // FILTER KETAT: HANYA model FLASH (Free Tier) dan generateContent.
+  // Buang semua model berat/berbayar (pro, ultra), embedding, aqa, tts, imagen, audio/video.
+  const freeModels = models
+    .filter((m) => {
+      const id = (m.name || "").replace(/^models\//, "").toLowerCase();
+      const canGenerate = m.supportedGenerationMethods?.includes("generateContent");
+      const isFlash = id.includes("flash");
+      const isExcluded =
+        id.includes("embedding") ||
+        id.includes("aqa") ||
+        id.includes("imagen") ||
+        id.includes("pro") ||
+        id.includes("ultra") ||
+        id.includes("live") ||
+        id.includes("tts");
+      return canGenerate && isFlash && !isExcluded;
+    })
     .map((m) => {
       const id = m.name.replace(/^models\//, "");
+      const cleanName = m.displayName ? m.displayName.replace(/Gemini\s*/i, "") : id;
       return {
         id,
-        name: m.displayName ? `${m.displayName} (${id})` : id,
+        name: `⚡ Gemini ${cleanName} [Free Tier]`,
       };
     });
+
+  return freeModels.length > 0 ? freeModels : FREE_TIER_GEMINI_MODELS;
 }
 
 async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, temperature = 0.7, timeoutMs = 30000 }) {
@@ -141,10 +167,10 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
       throw new AIError("Akses API ditolak (403). Pastikan Generative Language API aktif.");
     }
     if (response.status === 404) {
-      throw new AIError(`Model "${model}" tidak ditemukan di akun ini. Silakan klik Deteksi Model.`, true);
+      throw new AIError(`Model "${model}" tidak aktif di akun ini. Silakan klik Deteksi Model Free Tier.`, true);
     }
     if (response.status === 429) {
-      throw new AIError("Batas kuota Gemini tercapai. Tunggu 1 menit lalu coba lagi.", true);
+      throw new AIError("Batas kuota gratis Gemini tercapai sementara. Tunggu 1 menit lalu coba lagi.", true);
     }
     throw new AIError(`Gemini Error (${response.status}): ${errorMsg}`);
   }
@@ -159,7 +185,6 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
 
 // -------------------------------------------------------------
 // 2. OPENAI-COMPATIBLE / CUSTOM ENDPOINT ENGINE
-// (OpenAI, Groq, DeepSeek, OpenRouter, Ollama, LM Studio, vLLM)
 // -------------------------------------------------------------
 
 async function callOpenAICompatibleApi({ baseUrl, apiKey, model, systemPrompt, userPrompt, timeoutMs = 30000 }) {
@@ -225,7 +250,6 @@ async function callOpenAICompatibleApi({ baseUrl, apiKey, model, systemPrompt, u
 
 function extractJsonFromText(rawText) {
   let cleaned = rawText.trim();
-  // Strip code block markdown if present
   if (cleaned.startsWith("```")) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   }
@@ -247,11 +271,9 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
   promptParts.push(`Kegiatan yang dikerjakan hari ini: ${kegiatan}`);
 
   const userPrompt = promptParts.join("\n");
-
   let rawJsonText = "";
 
   if (settings.provider === "custom") {
-    // Mode Custom / OpenAI-Compatible (OpenAI, DeepSeek, Groq, Ollama, dll)
     rawJsonText = await callOpenAICompatibleApi({
       baseUrl: settings.customBaseUrl,
       apiKey: settings.customApiKey,
@@ -260,12 +282,11 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
       userPrompt,
     });
   } else {
-    // Mode Google Gemini (Default)
+    // Mode Google Gemini (Hanya mencoba model Free Tier)
     const modelsToTry = [
       settings.model || "gemini-2.0-flash",
-      "gemini-2.5-flash",
-      "gemini-1.5-flash-latest",
       "gemini-2.0-flash-lite",
+      "gemini-1.5-flash-latest",
     ];
 
     let lastError = null;
