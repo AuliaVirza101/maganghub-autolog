@@ -12,7 +12,7 @@
       <div class="logo-badge">MH</div>
       <div>
         <h1 class="title">Auto-Log MagangHub</h1>
-        <p class="subtitle">Bertenaga Gemini AI</p>
+        <p class="subtitle">Bertenaga AI (1-Click Auto Fill)</p>
       </div>
     </div>
     <button id="settingsBtn" class="icon-btn" title="Pengaturan">
@@ -34,8 +34,8 @@
         <button class="chip" data-text="Fixing bug dan debugging issue pada modul backend">🐞 Bug Fix</button>
         <button class="chip" data-text="Implementasi fitur baru dan slicing tampilan">✨ Fitur Baru</button>
         <button class="chip" data-text="Melakukan integrasi API dan testing endpoint">🔌 Integrasi API</button>
-        <button class="chip" data-text="Code review bersama senior engineer dan refactoring">🔍 Code Review</button>
-        <button class="chip" data-text="Mengikuti daily standup meeting dan sprint planning">🗣️ Daily Standup</button>
+        <button class="chip" data-text="Code review bersama tim dan refactoring">🔍 Code Review</button>
+        <button class="chip" data-text="Mengikuti daily standup meeting dan koordinasi progres">🗣️ Daily Standup</button>
         <button class="chip" data-text="Membuat unit test dan automated integration testing">🧪 Testing</button>
       </div>
     </div>
@@ -43,56 +43,18 @@
     <!-- Input Box -->
     <div class="form-group">
       <label for="kegiatanInput" class="form-label">Kegiatan Singkat Hari Ini</label>
-      <textarea id="kegiatanInput" rows="2" placeholder="Contoh: Optimasi query SQL dan perbaikan endpoint login"></textarea>
-      <div class="input-hint">Tekan <strong>Ctrl + Enter</strong> untuk langsung men-generate.</div>
+      <textarea id="kegiatanInput" rows="3" placeholder="Contoh: Optimasi query SQL dan perbaikan endpoint login"></textarea>
+      <div class="input-hint">Tekan <strong>Ctrl + Enter</strong> untuk langsung generate & isi form.</div>
     </div>
 
-    <!-- Action Buttons -->
-    <button id="generateBtn" class="btn btn-primary">
+    <!-- Action Button (1-Click Action) -->
+    <button id="actionBtn" class="btn btn-primary">
       <span class="btn-icon">⚡</span>
-      <span id="generateBtnText">Generate Jurnal dengan AI</span>
+      <span id="actionBtnText">Generate & Langsung Isi Form</span>
     </button>
 
     <!-- Status Message -->
     <div id="statusBox" class="status-box" hidden></div>
-
-    <!-- Live Preview & Edit Card -->
-    <div id="previewCard" class="preview-card" hidden>
-      <div class="preview-header">
-        <span class="preview-title">Hasil Draft (Dapat Diedit):</span>
-      </div>
-
-      <div class="field-item">
-        <div class="field-label-row">
-          <label for="prevUraian">1. Uraian Aktivitas</label>
-          <span id="countUraian" class="char-count">0 karakter</span>
-        </div>
-        <textarea id="prevUraian" rows="4" class="field-textarea"></textarea>
-      </div>
-
-      <div class="field-item">
-        <div class="field-label-row">
-          <label for="prevPembelajaran">2. Pembelajaran</label>
-          <span id="countPembelajaran" class="char-count">0 karakter</span>
-        </div>
-        <textarea id="prevPembelajaran" rows="3" class="field-textarea"></textarea>
-      </div>
-
-      <div class="field-item">
-        <div class="field-label-row">
-          <label for="prevKendala">3. Kendala & Solusi</label>
-          <span id="countKendala" class="char-count">0 karakter</span>
-        </div>
-        <textarea id="prevKendala" rows="3" class="field-textarea"></textarea>
-      </div>
-
-      <div class="action-row">
-        <button id="injectBtn" class="btn btn-success">
-          <span class="btn-icon">🚀</span>
-          <span>Isi ke Form MagangHub</span>
-        </button>
-      </div>
-    </div>
   </main>
 
   <footer class="app-footer">

@@ -5,17 +5,9 @@ const $ = (id) => document.getElementById(id);
 const settingsBtn = $("settingsBtn");
 const noticeBar = $("noticeBar");
 const kegiatanInput = $("kegiatanInput");
-const generateBtn = $("generateBtn");
-const generateBtnText = $("generateBtnText");
+const actionBtn = $("actionBtn");
+const actionBtnText = $("actionBtnText");
 const statusBox = $("statusBox");
-const previewCard = $("previewCard");
-const prevUraian = $("prevUraian");
-const prevPembelajaran = $("prevPembelajaran");
-const prevKendala = $("prevKendala");
-const countUraian = $("countUraian");
-const countPembelajaran = $("countPembelajaran");
-const countKendala = $("countKendala");
-const injectBtn = $("injectBtn");
 const tabStatus = $("tabStatus");
 
 // Buka halaman options
@@ -31,24 +23,6 @@ function hideStatus() {
   statusBox.hidden = true;
   statusBox.innerHTML = "";
 }
-
-function updateCharCount(el, counterEl) {
-  const len = el.value.length;
-  counterEl.textContent = `${len} karakter`;
-  if (len < 120) {
-    counterEl.style.color = "#f87171";
-  } else {
-    counterEl.style.color = "#6ee7b7";
-  }
-}
-
-[prevUraian, prevPembelajaran, prevKendala].forEach((textarea) => {
-  textarea.addEventListener("input", () => {
-    updateCharCount(prevUraian, countUraian);
-    updateCharCount(prevPembelajaran, countPembelajaran);
-    updateCharCount(prevKendala, countKendala);
-  });
-});
 
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -91,7 +65,7 @@ document.querySelectorAll(".chip").forEach((chip) => {
 kegiatanInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    handleGenerate();
+    handleGenerateAndFill();
   }
 });
 
@@ -146,49 +120,14 @@ async function init() {
   kegiatanInput.focus();
 }
 
-async function handleGenerate() {
+// 1-Click Action: Generate AI dan Langsung Tembak ke Form MagangHub
+async function handleGenerateAndFill() {
   const kegiatan = kegiatanInput.value.trim();
   if (kegiatan.length < 5) {
     showStatus("error", "Mohon isi ringkasan kegiatan hari ini terlebih dahulu.");
     kegiatanInput.focus();
     return;
   }
-
-  hideStatus();
-  generateBtn.disabled = true;
-  generateBtnText.textContent = "AI sedang menyusun laporan...";
-
-  try {
-    const tab = await getActiveTab();
-    const tanggal = extractDateFromUrl(tab?.url || "");
-
-    const hasil = await generateLaporan({ kegiatan, tanggal });
-
-    // Tampilkan di preview card (editable)
-    prevUraian.value = hasil.uraian;
-    prevPembelajaran.value = hasil.pembelajaran;
-    prevKendala.value = hasil.kendala;
-
-    updateCharCount(prevUraian, countUraian);
-    updateCharCount(prevPembelajaran, countPembelajaran);
-    updateCharCount(prevKendala, countKendala);
-
-    previewCard.hidden = false;
-    showStatus("info", "Draft jurnal selesai disusun. Anda dapat mengedit teks sebelum menyuntikkan ke form.");
-
-    // Simpan ke storage cache
-    await chrome.storage.local.set({ lastKegiatan: kegiatan });
-  } catch (err) {
-    showStatus("error", err.message || "Gagal menghasilkan jurnal laporan.");
-  } finally {
-    generateBtn.disabled = false;
-    generateBtnText.textContent = "Generate Ulang dengan AI";
-  }
-}
-
-async function handleInject() {
-  hideStatus();
-  injectBtn.disabled = true;
 
   const tab = await getActiveTab();
   let currentHost = "";
@@ -197,52 +136,56 @@ async function handleInject() {
   } catch {}
 
   if (currentHost !== TARGET_HOST) {
-    showStatus("error", "Harap beralih ke tab form Monev MagangHub terlebih dahulu.");
-    injectBtn.disabled = false;
+    showStatus("error", "Buka halaman <strong>monev.maganghub.kemnaker.go.id</strong> dan buka form 'Tambah Laporan' terlebih dahulu.");
     return;
   }
 
-  const dataToInject = {
-    uraian: prevUraian.value.trim(),
-    pembelajaran: prevPembelajaran.value.trim(),
-    kendala: prevKendala.value.trim(),
-  };
-
-  const settings = await loadSettings();
+  hideStatus();
+  actionBtn.disabled = true;
+  actionBtnText.textContent = "AI sedang menyusun & mengisi...";
+  showStatus("info", "Sedang menyusun laporan formal dan menyuntikkan ke form...");
 
   try {
+    const tanggal = extractDateFromUrl(tab?.url || "");
+    const settings = await loadSettings();
+
+    // 1. Generate Laporan dari AI
+    const hasil = await generateLaporan({ kegiatan, tanggal });
+
+    // 2. Langsung Inject ke Form Halaman MagangHub
     const [execution] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: fillMonevForm,
-      args: [dataToInject, { autoCheckbox: settings.autoCheckbox }],
+      args: [hasil, { autoCheckbox: settings.autoCheckbox }],
     });
 
     const result = execution?.result;
     if (!result?.ok) {
-      throw new Error(result?.error || "Gagal mengisi form.");
+      throw new Error(result?.error || "Gagal mengisi form di halaman MagangHub.");
     }
 
     const r = result.report;
     const notes = [];
     if (r.missing.length > 0) notes.push(`Field belum terisi: ${r.missing.join(", ")}`);
     if (r.kehadiran !== "ok" && r.kehadiran !== "sudah terisi") notes.push(`Status Kehadiran: ${r.kehadiran}`);
-    if (settings.autoCheckbox && r.checkbox !== "ok" && r.checkbox !== "sudah tercentang") {
-      notes.push(`Checkbox pernyataan: ${r.checkbox}`);
-    }
 
     const notesHtml = notes.length > 0 ? `<ul>${notes.map((n) => `<li>${n}</li>`).join("")}</ul>` : "";
     showStatus(
       notes.length > 0 ? "error" : "success",
-      `<strong>Form berhasil diisi!</strong> Silakan periksa kembali di halaman MagangHub, lalu klik tombol <strong>Simpan</strong>.${notesHtml}`
+      `<strong>🎉 Form MagangHub Berhasil Diisi!</strong><br>Seluruh kolom (Uraian, Pembelajaran, Kendala, Hadir & Centang) sudah terisi langsung di web. Kamu bisa langsung mengeditnya di web jika perlu, lalu klik tombol <strong>Simpan</strong>.${notesHtml}`
     );
+
+    // Ubah teks tombol jadi opsi Generate Ulang jika user kurang sreg
+    actionBtnText.textContent = "🔄 Generate Ulang & Timpa Form";
+    await chrome.storage.local.set({ lastKegiatan: kegiatan });
   } catch (err) {
-    showStatus("error", `Terjadi kesalahan saat mengisi form: ${err.message}`);
+    showStatus("error", err.message || "Terjadi kesalahan saat memproses laporan.");
+    actionBtnText.textContent = "⚡ Generate & Langsung Isi Form";
   } finally {
-    injectBtn.disabled = false;
+    actionBtn.disabled = false;
   }
 }
 
-generateBtn.addEventListener("click", handleGenerate);
-injectBtn.addEventListener("click", handleInject);
+actionBtn.addEventListener("click", handleGenerateAndFill);
 
 init();

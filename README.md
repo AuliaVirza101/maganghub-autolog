@@ -1,6 +1,6 @@
-# MagangHub Auto-Log
+# MagangHub Auto-Log ⚡
 
-Ekstensi Google Chrome untuk menyusun dan mengisi otomatis jurnal logbook harian (Monev) **MagangHub Kemnaker** menggunakan AI Google Gemini.
+Ekstensi Google Chrome untuk menyusun dan **otomatis langsung mengisi** jurnal logbook harian (Monev) **MagangHub Kemnaker** menggunakan AI dalam **1 Kali Klik**.
 
 Ekstensi ini otomatis mengisi:
 - Kolom **Uraian Aktivitas** (sesuai standar minimal karakter)
@@ -49,7 +49,7 @@ Bagi yang belum pernah menggunakan GitHub, ikuti urutan langkah di bawah ini:
 
 ---
 
-### Langkah 3: Ambil API Key Gemini (Hanya Sekali di Awal, 100% Gratis)
+### Langkah 3: Ambil API Key AI Gratis (Hanya Sekali di Awal, 100% Gratis)
 
 Agar AI bisa bekerja menulis jurnal untukmu, kamu butuh kunci izin gratis dari Google:
 
@@ -63,25 +63,26 @@ Agar AI bisa bekerja menulis jurnal untukmu, kamu butuh kunci izin gratis dari G
    - Klik ikon ekstensi **MagangHub Auto-Log** di pojok kanan atas browsermu.
    - Klik tombol roda gigi / pengaturan (di pojok kanan atas jendela popup ekstensi).
    - Di kolom **API Key Gemini**, paste kode kunci yang tadi kamu copy.
-   - Di kolom **Posisi / Role Magang**, tulis posisi kamu (contoh: *Staf Administrasi*, *Marketing*, *UI/UX Designer*, *IT Support*, atau posisi lainnya).
+   - Di kolom **Posisi / Role Magang**, tulis posisi kamu (contoh: *Staf Administrasi*, *Marketing*, *UI/UX Designer*, *Software Engineer*, dll).
    - Klik tombol **Simpan Pengaturan**.
+
+*(Catatan: Jika memiliki langganan AI lain seperti OpenAI, Groq, DeepSeek, atau server lokal Ollama, Anda juga dapat mengaturnya di menu Pengaturan).*
 
 ---
 
-### Langkah 4: Cara Pakai Sehari-hari
+### Langkah 4: Cara Pakai Sehari-hari (1-Click Workflow)
 
 1. Buka website Monev MagangHub: [https://monev.maganghub.kemnaker.go.id/](https://monev.maganghub.kemnaker.go.id/)
 2. Buka menu logbook dan klik tombol **Tambah Laporan** sampai formulir isian (pop-up modal) terbuka di layar.
 3. Klik ikon ekstensi **MagangHub Auto-Log** di pojok kanan atas Chrome.
-4. Di kotak input, ketik 1 kalimat singkat kegiatanmu hari ini.
-   - *Contoh untuk Administrasi:* `"merapikan arsip berkas masuk dan menginput data surat ke excel"`
-   - *Contoh untuk IT/Tech:* `"debugging query backend dan update endpoint api"`
-   - *Contoh untuk Marketing:* `"membuat copywriting promo dan riset tren konten instagram"`
-5. Klik tombol **Generate Jurnal dengan AI** (tunggu sekitar 2–3 detik).
-6. Tiga kolom isian laporan formal akan muncul di layar ekstensi. Kamu bisa membaca atau mengedit teksnya jika ada kalimat yang ingin ditambah.
-7. Klik tombol hijau **🚀 Isi ke Form MagangHub**.
-8. Seluruh kolom laporan di web MagangHub akan otomatis terisi, status presensi otomatis terpilih **Hadir**, dan checkbox persetujuan otomatis tercentang.
-9. Periksa sebentar di web MagangHub, lalu klik tombol **Simpan** seperti biasa. Selesai!
+4. Di kotak input, ketik 1 kalimat singkat kegiatanmu hari ini (atau klik preset tombol cepat yang tersedia).
+5. Klik tombol **⚡ Generate & Langsung Isi Form** (atau tekan `Ctrl + Enter`).
+6. Tunggu 1–2 detik:
+   - AI langsung menyusun laporan formal dan **langsung mengisikannya ke formulir web MagangHub**.
+   - Status presensi otomatis terpilih **"Hadir"** dan checkbox persetujuan otomatis **tercentang**.
+7. **Ingin mengedit?** Kamu bisa langsung mengedit teksnya secara leluasa di formulir halaman MagangHub.
+8. **Ingin generate ulang?** Cukup klik lagi tombol **🔄 Generate Ulang & Timpa Form** di ekstensi.
+9. Jika sudah pas, klik tombol **Simpan** di web MagangHub. Selesai!
 
 ---
 
