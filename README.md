@@ -1,99 +1,97 @@
-# ✨ MagangHub Auto-Log
+# MagangHub Auto-Log
 
-> **Capek ngetik jurnal harian Monev MagangHub yang wajib panjang tiap hari?**  
-> Ekstensi ini bikin hidup anak magang lebih tenang. Cukup ketik 1 kalimat santai (contoh: *"rekap data penjualan di excel"*), AI otomatis menyusunnya jadi 3 paragraf laporan formal (Uraian, Pembelajaran, dan Kendala) lalu **otomatis mengisi form MagangHub Kemnaker**.
+Ekstensi Google Chrome untuk menyusun dan mengisi otomatis jurnal logbook harian (Monev) **MagangHub Kemnaker** menggunakan AI Google Gemini.
 
----
-
-## 💡 Kenapa Pakai Ini?
-
-- ⚡ **Hemat Waktu:** Gak perlu mikir keras merangkai kata formal tiap sore.
-- 📏 **Lolos Validasi Panjang Karakter:** MagangHub mewajibkan isian yang panjang (sering kali minimal 100–150 karakter per kolom). AI otomatis memastikan kalimatnya cukup panjang dan rapi.
-- 🎯 **Otomatis Hadir & Centang:** Status presensi langsung terpilih **"Hadir"** dan kotak persetujuan otomatis tercentang.
-- 👥 **Bisa untuk Semua Jurusan:** Mau kamu anak **IT, Akuntansi, Manajemen, Desain, Administrasi, atau Hukum**, gaya bahasa laporannya bisa disesuaikan dengan posisi kamu!
-- 🔒 **100% Aman & Gratis:** Tidak ada biaya sama sekali. Data dan kunci akun tersimpan di laptop kamu sendiri.
+Ekstensi ini otomatis mengisi:
+- Kolom **Uraian Aktivitas** (sesuai standar minimal karakter)
+- Kolom **Pembelajaran**
+- Kolom **Kendala & Solusi**
+- Status Kehadiran otomatis terpilih **"Hadir"**
+- Checkbox pernyataan integritas otomatis **tercentang**
 
 ---
 
-## 📥 Panduan Pemasangan (Khusus Pemula / Tanpa Koding)
+## 📖 Panduan Lengkap Cara Pasang (Langkah Demi Langkah)
 
-Kamu tidak butuh aplikasi koding atau keahlian teknis. Cukup ikuti 3 langkah mudah ini:
-
-### Langkah 1: Download Folder Ekstensi
-1. Di halaman GitHub ini, klik tombol hijau bertuliskan **Code** (di bagian kanan atas daftar file).
-2. Pilih **Download ZIP**.
-3. Buka file ZIP yang baru ter-download di laptopmu, lalu **Ekstrak (Extract All)** ke folder yang mudah kamu temukan (misal di folder *Documents* atau *Desktop*).
+Bagi yang belum pernah menggunakan GitHub, ikuti urutan langkah di bawah ini:
 
 ---
 
-### Langkah 2: Pasang di Google Chrome
-1. Buka browser **Google Chrome**.
-2. Ketik `chrome://extensions/` di kolom alamat website (address bar) lalu tekan **Enter**.
-3. Di pojok kanan atas layar, aktifkan toggle **Mode Pengembang (Developer mode)** hingga berwarna biru.
-4. Di pojok kiri atas, klik tombol **Muat yang belum dibongkar (Load unpacked)**.
-5. Cari dan pilih folder hasil ekstrak tadi (folder yang di dalamnya ada file `manifest.json`).
-6. 🎉 **Selesai!** Ekstensi sudah terpasang. Klik ikon puzzle (ekstensi) di pojok kanan atas Chrome, lalu klik ikon **Pin (📌)** di samping *Auto-Log MagangHub* agar selalu muncul di toolbar.
+### Langkah 1: Cara Download File dari Halaman Ini
+
+1. Lihat ke bagian kanan atas dari tabel daftar file di halaman ini.
+2. Temukan tombol berwarna hijau yang ada tulisan **`<> Code`**. Klik tombol hijau tersebut.
+3. Pada kotak menu yang muncul ke bawah, klik pilihan paling bawah: **Download ZIP**.
+4. Laptop kamu akan men-download file bernama `maganghub-autolog-main.zip`.
+5. Buka folder **Downloads** di laptopmu:
+   - Klik kanan file `maganghub-autolog-main.zip`
+   - Pilih **Extract All...** (Ekstrak Semua)
+   - Klik tombol **Extract**.
+   - *Sekarang kamu sudah memiliki folder biasa bernama `maganghub-autolog-main`.*
 
 ---
 
-### Langkah 3: Ambil Kunci AI Gratis (Hanya 1x di Awal)
-Ekstensi ini butuh "kunci izin" resmi dari Google Gemini agar AI bisa bekerja:
+### Langkah 2: Cara Pasang ke Google Chrome
 
-1. Buka website resmi [Google AI Studio](https://aistudio.google.com/) lalu login menggunakan akun Google / Gmail biasamu.
-2. Klik tombol **Get API key** di menu sebelah kiri.
-3. Klik tombol biru **Create API key** (pilih project yang tersedia atau buat baru).
-4. Klik tombol **Copy** pada kode kunci yang muncul (diawali huruf `AIzaSy...`). *Tenang, ini 100% gratis dari Google tanpa perlu kartu kredit!*
-5. Kembali ke Google Chrome kamu:
-   - Klik kanan ikon ekstensi **Auto-Log MagangHub** di toolbar, pilih **Opsi (Options)** / **Pengaturan**.
-   - Tempel (*Paste*) kunci yang tadi di kolom **API Key Gemini**.
-   - Masukkan posisi magangmu (misal: *Staf Administrasi*, *Social Media Specialist*, atau *Backend Engineer*).
+1. Buka aplikasi **Google Chrome** di laptopmu.
+2. Di baris alamat website paling atas (address bar), ketik:
+   ```text
+   chrome://extensions
+   ```
+   lalu tekan **Enter**.
+3. Perhatikan **pojok kanan atas layar**: aktifkan tombol toggle **Developer mode** (Mode pengembang) sampai menyala (warna biru).
+4. Setelah Developer mode aktif, lihat ke **pojok kiri atas layar**: klik tombol **Load unpacked** (Muat yang belum dibongkar).
+5. Jendela file laptopmu akan terbuka:
+   - Cari dan buka folder `maganghub-autolog-main` yang sudah kamu ekstrak tadi.
+   - Klik folder tersebut, lalu klik tombol **Select Folder** (Pilih Folder).
+6. Ekstensi **MagangHub Auto-Log** sekarang sudah terpasang di Chrome kamu!
+7. **Biar mudah dibuka:** Klik ikon puzzle (logo ekstensi) di pojok kanan atas Chrome, lalu klik ikon **Pin (📌)** di samping *Auto-Log MagangHub* agar logonya selalu terlihat di sebelah address bar.
+
+---
+
+### Langkah 3: Ambil API Key Gemini (Hanya Sekali di Awal, 100% Gratis)
+
+Agar AI bisa bekerja menulis jurnal untukmu, kamu butuh kunci izin gratis dari Google:
+
+1. Buka website: [https://aistudio.google.com/](https://aistudio.google.com/)
+2. Login menggunakan akun Google / Gmail biasamu.
+3. Di panel menu sebelah kiri, klik menu **Get API key**.
+4. Klik tombol biru **Create API key**.
+5. Pilih opsi project yang muncul, lalu klik **Create API key in existing project** (atau buat project baru jika diminta).
+6. Klik tombol **Copy** pada kode kunci yang muncul (kodenya diawali tulisan `AIzaSy...`).
+7. Buka ekstensi di Chrome:
+   - Klik ikon ekstensi **MagangHub Auto-Log** di pojok kanan atas browsermu.
+   - Klik tombol roda gigi / pengaturan (di pojok kanan atas jendela popup ekstensi).
+   - Di kolom **API Key Gemini**, paste kode kunci yang tadi kamu copy.
+   - Di kolom **Posisi / Role Magang**, tulis posisi kamu (contoh: *Staf Administrasi*, *Marketing*, *UI/UX Designer*, *IT Support*, atau posisi lainnya).
    - Klik tombol **Simpan Pengaturan**.
 
 ---
 
-## 🚀 Cara Pakai Sehari-hari
+### Langkah 4: Cara Pakai Sehari-hari
 
-1. Buka website **Monev MagangHub** ([monev.maganghub.kemnaker.go.id](https://monev.maganghub.kemnaker.go.id/)).
-2. Buka menu logbook harian dan klik tombol **Tambah Laporan** hingga formulir isian muncul di layar.
-3. Klik ikon ekstensi **Auto-Log MagangHub** di pojok kanan atas Chrome.
-4. Ketik kegiatan singkatmu hari ini di kolom teks (atau klik tombol preset cepat yang ada).
-   > **Contoh input santai:**
-   > - *"merapikan database arsip surat masuk dan koordinasi dengan divisi hrd"*
-   > - *"bikin desain banner promo feed instagram untuk campaign weekend"*
-   > - *"analisis laporan keuangan bulanan dan rekonsiliasi kas bank"*
-5. Klik tombol **Generate Jurnal dengan AI** (tunggu 2–3 detik).
-6. Teks laporan resmi akan muncul. Kamu bisa baca atau edit sedikit jika mau menambahkan detail.
+1. Buka website Monev MagangHub: [https://monev.maganghub.kemnaker.go.id/](https://monev.maganghub.kemnaker.go.id/)
+2. Buka menu logbook dan klik tombol **Tambah Laporan** sampai formulir isian (pop-up modal) terbuka di layar.
+3. Klik ikon ekstensi **MagangHub Auto-Log** di pojok kanan atas Chrome.
+4. Di kotak input, ketik 1 kalimat singkat kegiatanmu hari ini.
+   - *Contoh untuk Administrasi:* `"merapikan arsip berkas masuk dan menginput data surat ke excel"`
+   - *Contoh untuk IT/Tech:* `"debugging query backend dan update endpoint api"`
+   - *Contoh untuk Marketing:* `"membuat copywriting promo dan riset tren konten instagram"`
+5. Klik tombol **Generate Jurnal dengan AI** (tunggu sekitar 2–3 detik).
+6. Tiga kolom isian laporan formal akan muncul di layar ekstensi. Kamu bisa membaca atau mengedit teksnya jika ada kalimat yang ingin ditambah.
 7. Klik tombol hijau **🚀 Isi ke Form MagangHub**.
-8. Kolom Uraian, Pembelajaran, Kendala, status "Hadir", dan kotak persetujuan di web MagangHub akan langsung terisi rapi!
-9. Terakhir, tinggal klik tombol **Simpan** di halaman MagangHub.
+8. Seluruh kolom laporan di web MagangHub akan otomatis terisi, status presensi otomatis terpilih **Hadir**, dan checkbox persetujuan otomatis tercentang.
+9. Periksa sebentar di web MagangHub, lalu klik tombol **Simpan** seperti biasa. Selesai!
 
 ---
 
-## ❓ Pertanyaan yang Sering Ditanyakan (FAQ)
+## ❓ FAQ
 
-<details>
-<summary><strong>Apakah formulirnya langsung otomatis terkirim tanpa saya cek?</strong></summary>
-Tidak. Ekstensi ini hanya membantu mengetik dan memilihkan opsi "Hadir" di form. Kamu tetap memegang kendali penuh untuk meninjau kembali isiannya sebelum menekan tombol Simpan di MagangHub.
-</details>
+**Q: Apakah data akun atau password MagangHub saya diambil?**  
+A: Tidak sama sekali. Ekstensi ini tidak pernah meminta username atau password akun MagangHub kamu.
 
-<details>
-<summary><strong>Apakah akun MagangHub saya aman?</strong></summary>
-Sangat aman. Ekstensi ini tidak pernah meminta atau menyimpan username maupun password akun MagangHub kamu. Ekstensi hanya berjalan di layar browser kamu saat kamu membukanya.
-</details>
+**Q: Apakah API Key Google Gemini ini bayar?**  
+A: Tidak. Google AI Studio memberikan kuota gratis yang sangat besar untuk penggunaan pribadi. Tidak perlu memasukkan kartu kredit.
 
-<details>
-<summary><strong>Apakah Google Gemini API ini berbayar?</strong></summary>
-Tidak bayar sama sekali alias <strong>100% Gratis</strong> untuk penggunaan pribadi sehari-hari. Google memberikan kuota ribuan request per hari secara cuma-cuma.
-</details>
-
-<details>
-<summary><strong>Bisa dipakai di browser lain selain Google Chrome?</strong></summary>
-Bisa! Ekstensi ini kompatibel dengan browser berbasis Chromium lainnya seperti <strong>Microsoft Edge</strong>, <strong>Brave</strong>, dan <strong>Opera</strong>. Caranya sama, cukup aktifkan Developer Mode di menu ekstensi browser masing-masing.
-</details>
-
----
-
-<p align="center">
-  Dibuat untuk mempermudah rekan-rekan peserta <b>MagangHub Kemnaker</b> se-Indonesia 🇮🇩<br>
-  <i>Ada kendala atau saran? Silakan buka menu Issues di repositori ini.</i>
-</p>
+**Q: Bisakah dipakai di Microsoft Edge atau Brave?**  
+A: Bisa. Caranya sama: buka `edge://extensions` atau `brave://extensions`, nyalakan Developer Mode, lalu klik *Load unpacked*.
