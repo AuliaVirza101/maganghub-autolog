@@ -3,16 +3,17 @@
 
 const DEFAULT_SETTINGS = {
   apiKey: "",
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
   posisi: "Software Engineer Intern",
   konteks: "Pengembangan sistem web dan backend",
   autoCheckbox: true,
 };
 
-const AVAILABLE_MODELS = [
-  { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Cepat & Stabil - Rekomendasi)" },
-  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Model Terbaru)" },
-  { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Paling Detail & Kompleks)" },
+const RECOMMENDED_MODELS = [
+  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Sangat Cepat & Direkomendasikan)" },
+  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Generasi Terbaru)" },
+  { id: "gemini-1.5-flash-latest", name: "Gemini 1.5 Flash Latest" },
+  { id: "gemini-2.0-flash-lite", name: "Gemini 2.0 Flash Lite (Ringan & Cepat)" },
 ];
 
 async function loadSettings() {
@@ -64,12 +65,41 @@ function cleanOutput(text) {
     .trim();
 }
 
+// Mengambil daftar model yang aktif dan didukung oleh API key pengguna
+async function fetchAvailableModels(apiKey) {
+  if (!apiKey) throw new GeminiError("API Key belum diisi.");
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+  const response = await fetch(endpoint).catch(() => null);
+  if (!response) {
+    throw new GeminiError("Gagal menghubungi server Google. Cek koneksi internet.");
+  }
+
+  const resJson = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const errorMsg = resJson?.error?.message || response.statusText;
+    throw new GeminiError(`Gagal mengambil model (${response.status}): ${errorMsg}`);
+  }
+
+  const models = resJson.models || [];
+  // Filter model yang mendukung method generateContent
+  return models
+    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+    .map((m) => {
+      const id = m.name.replace(/^models\//, "");
+      return {
+        id,
+        name: m.displayName ? `${m.displayName} (${id})` : id,
+      };
+    });
+}
+
 async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, temperature = 0.7, timeoutMs = 30000 }) {
   if (!apiKey) {
     throw new GeminiError("API Key Gemini belum diatur. Silakan atur di menu Pengaturan.");
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
   const payload = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
@@ -89,7 +119,6 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(payload),
     });
@@ -112,7 +141,7 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
       throw new GeminiError("Akses API ditolak (403). Pastikan Generative Language API aktif di Google Cloud.");
     }
     if (response.status === 404) {
-      throw new GeminiError(`Model "${model}" tidak ditemukan di akun ini.`, true);
+      throw new GeminiError(`Model "${model}" tidak ditemukan di akun ini. Coba pilih model Gemini 2.0 Flash atau Gemini 2.5 Flash.`, true);
     }
     if (response.status === 429) {
       throw new GeminiError("Batas kuota / rate limit tercapai. Tunggu 1 menit lalu coba lagi.", true);
@@ -143,9 +172,10 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
   const userPrompt = promptParts.join("\n");
 
   const modelsToTry = [
-    settings.model || "gemini-1.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-pro",
+    settings.model || "gemini-2.0-flash",
+    "gemini-2.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-2.0-flash-lite",
   ];
 
   let lastError = null;
@@ -175,7 +205,6 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
         return result;
       }
 
-      // Jika karakter agak pendek, coba format fallback
       lastError = new GeminiError("Hasil teks terlalu singkat dari batas minimum MagangHub.");
     } catch (err) {
       lastError = err;
@@ -186,7 +215,7 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
   throw lastError || new GeminiError("Gagal men-generate laporan dengan Gemini.");
 }
 
-async function testApiKey(apiKey, model = "gemini-1.5-flash") {
+async function testApiKey(apiKey, model = "gemini-2.0-flash") {
   const result = await callGeminiApi({
     apiKey,
     model,

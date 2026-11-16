@@ -36,13 +36,19 @@
         </div>
 
         <div class="form-group">
-          <label for="modelSelect">Pilihan Model</label>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label for="modelSelect">Pilihan Model Gemini</label>
+            <button type="button" id="detectModelsBtn" class="btn-text" style="font-size:11.5px; color:#60a5fa; background:none; border:none; cursor:pointer; text-decoration:underline;">
+              🔄 Deteksi Model Akun Saya
+            </button>
+          </div>
           <select id="modelSelect">
-            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Sangat Cepat & Stabil - Default)</option>
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Model Generasi Baru)</option>
-            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detail Kompleks)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Default - Sangat Cepat)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Generasi Terbaru)</option>
+            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Latest)</option>
+            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Ringan)</option>
           </select>
-          <small class="helper-text">Model Flash sangat direkomendasikan karena respons instan dan kuota gratis harian melimpah.</small>
+          <small class="helper-text">Jika model tertentu tidak tersedia di akun Anda, klik tombol <strong>Deteksi Model Akun Saya</strong>.</small>
         </div>
       </section>
 
@@ -53,12 +59,12 @@
 
         <div class="form-group">
           <label for="posisi">Posisi / Role Magang</label>
-          <input type="text" id="posisi" placeholder="Contoh: Software Engineer Intern, Data Analyst, UI/UX Designer">
+          <input type="text" id="posisi" placeholder="Contoh: Software Engineer Intern, Staf Administrasi, Marketing, UI/UX">
         </div>
 
         <div class="form-group">
           <label for="konteks">Divisi / Bidang Pekerjaan</label>
-          <input type="text" id="konteks" placeholder="Contoh: Pengembangan web backend, arsitektur REST API, migrasi database">
+          <input type="text" id="konteks" placeholder="Contoh: Pengembangan web, pengelolaan arsip surat, digital marketing">
         </div>
       </section>
 
