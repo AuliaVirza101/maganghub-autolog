@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengaturan - MagangHub Auto-Log</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="settings-header">
+      <div class="header-content">
+        <h1>⚙️ Pengaturan Ekstensi</h1>
+        <p>Konfigurasi API Key Gemini dan konteks peran magang Anda.</p>
+      </div>
+    </header>
+
+    <div id="alertBox" class="alert-box" hidden></div>
+
+    <form id="settingsForm">
+      <!-- Section 1: Gemini API -->
+      <section class="card">
+        <h2>1. Kredensial Gemini API</h2>
+        <p class="section-desc">
+          Dapatkan API Key gratis (Free Tier) di 
+          <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.
+        </p>
+
+        <div class="form-group">
+          <label for="apiKey">API Key Gemini <span class="required">*</span></label>
+          <div class="input-with-button">
+            <input type="password" id="apiKey" placeholder="AIzaSy..." autocomplete="off">
+            <button type="button" id="toggleKeyBtn" class="btn btn-secondary">Lihat</button>
+            <button type="button" id="testKeyBtn" class="btn btn-secondary">Test Koneksi</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="modelSelect">Pilihan Model</label>
+          <select id="modelSelect">
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Sangat Cepat & Stabil - Default)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Model Generasi Baru)</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detail Kompleks)</option>
+          </select>
+          <small class="helper-text">Model Flash sangat direkomendasikan karena respons instan dan kuota gratis harian melimpah.</small>
+        </div>
+      </section>
+
+      <!-- Section 2: Konteks Magang -->
+      <section class="card">
+        <h2>2. Konteks Magang Anda</h2>
+        <p class="section-desc">Informasi ini dimasukkan ke dalam prompt agar narasi jurnal relevan dengan bidang kerja Anda.</p>
+
+        <div class="form-group">
+          <label for="posisi">Posisi / Role Magang</label>
+          <input type="text" id="posisi" placeholder="Contoh: Software Engineer Intern, Data Analyst, UI/UX Designer">
+        </div>
+
+        <div class="form-group">
+          <label for="konteks">Divisi / Bidang Pekerjaan</label>
+          <input type="text" id="konteks" placeholder="Contoh: Pengembangan web backend, arsitektur REST API, migrasi database">
+        </div>
+      </section>
+
+      <!-- Section 3: Otomatisasi Form -->
+      <section class="card">
+        <h2>3. Preferensi Form</h2>
+
+        <div class="checkbox-group">
+          <label class="switch-label">
+            <input type="checkbox" id="autoCheckbox" checked>
+            <span>Otomatis centang kotak persetujuan / keabsahan data di form Monev</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Footer Action -->
+      <div class="form-actions">
+        <button type="submit" id="saveBtn" class="btn btn-primary">Simpan Pengaturan</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="gemini.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

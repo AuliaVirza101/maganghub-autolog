@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MagangHub Auto-Log</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-badge">MH</div>
+      <div>
+        <h1 class="title">Auto-Log MagangHub</h1>
+        <p class="subtitle">Bertenaga Gemini AI</p>
+      </div>
+    </div>
+    <button id="settingsBtn" class="icon-btn" title="Pengaturan">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </header>
+
+  <main class="container">
+    <!-- Notice Bar -->
+    <div id="noticeBar" class="notice-bar" hidden></div>
+
+    <!-- Quick Chips / Presets -->
+    <div class="chips-container">
+      <span class="chips-label">Preset Cepat:</span>
+      <div class="chips-list">
+        <button class="chip" data-text="Fixing bug dan debugging issue pada modul backend">🐞 Bug Fix</button>
+        <button class="chip" data-text="Implementasi fitur baru dan slicing tampilan">✨ Fitur Baru</button>
+        <button class="chip" data-text="Melakukan integrasi API dan testing endpoint">🔌 Integrasi API</button>
+        <button class="chip" data-text="Code review bersama senior engineer dan refactoring">🔍 Code Review</button>
+        <button class="chip" data-text="Mengikuti daily standup meeting dan sprint planning">🗣️ Daily Standup</button>
+        <button class="chip" data-text="Membuat unit test dan automated integration testing">🧪 Testing</button>
+      </div>
+    </div>
+
+    <!-- Input Box -->
+    <div class="form-group">
+      <label for="kegiatanInput" class="form-label">Kegiatan Singkat Hari Ini</label>
+      <textarea id="kegiatanInput" rows="2" placeholder="Contoh: Optimasi query SQL dan perbaikan endpoint login"></textarea>
+      <div class="input-hint">Tekan <strong>Ctrl + Enter</strong> untuk langsung men-generate.</div>
+    </div>
+
+    <!-- Action Buttons -->
+    <button id="generateBtn" class="btn btn-primary">
+      <span class="btn-icon">⚡</span>
+      <span id="generateBtnText">Generate Jurnal dengan AI</span>
+    </button>
+
+    <!-- Status Message -->
+    <div id="statusBox" class="status-box" hidden></div>
+
+    <!-- Live Preview & Edit Card -->
+    <div id="previewCard" class="preview-card" hidden>
+      <div class="preview-header">
+        <span class="preview-title">Hasil Draft (Dapat Diedit):</span>
+      </div>
+
+      <div class="field-item">
+        <div class="field-label-row">
+          <label for="prevUraian">1. Uraian Aktivitas</label>
+          <span id="countUraian" class="char-count">0 karakter</span>
+        </div>
+        <textarea id="prevUraian" rows="4" class="field-textarea"></textarea>
+      </div>
+
+      <div class="field-item">
+        <div class="field-label-row">
+          <label for="prevPembelajaran">2. Pembelajaran</label>
+          <span id="countPembelajaran" class="char-count">0 karakter</span>
+        </div>
+        <textarea id="prevPembelajaran" rows="3" class="field-textarea"></textarea>
+      </div>
+
+      <div class="field-item">
+        <div class="field-label-row">
+          <label for="prevKendala">3. Kendala & Solusi</label>
+          <span id="countKendala" class="char-count">0 karakter</span>
+        </div>
+        <textarea id="prevKendala" rows="3" class="field-textarea"></textarea>
+      </div>
+
+      <div class="action-row">
+        <button id="injectBtn" class="btn btn-success">
+          <span class="btn-icon">🚀</span>
+          <span>Isi ke Form MagangHub</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <span id="tabStatus">Mendeteksi tab MagangHub...</span>
+  </footer>
+
+  <script src="gemini.js"></script>
+  <script src="fill.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
