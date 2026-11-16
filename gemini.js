@@ -27,18 +27,27 @@ async function saveSettings(newSettings) {
 
 const MIN_CHARS_PER_FIELD = 120;
 
-const SYSTEM_PROMPT = `Anda adalah asisten cerdas yang bertugas membantu peserta magang MagangHub Kemnaker menyusun laporan jurnal harian (monev).
-Dari poin/kalimat kegiatan singkat yang diberikan oleh user, kembangkan menjadi 3 bagian laporan resmi:
-1. "uraian": Uraian aktivitas harian secara rinci mengenai apa yang dikerjakan, langkah-langkah teknis/operasionalnya, dan progres atau hasil yang dicapai.
-2. "pembelajaran": Pembelajaran kompetensi atau insight yang diperoleh dari kegiatan tersebut (misal teknik problem solving, arsitektur, kolaborasi tim, atau best practices).
-3. "kendala": Kendala realistis yang dihadapi selama pengerjaan beserta solusi/penanganannya. Bila tidak ada error fatal, sebutkan kendala penyesuaian ringan yang masuk akal (misal: koordinasi alur data, pemahaman dokumentasi, atau optimasi) dan bagaimana kendala itu diselesaikan.
+// SYSTEM PROMPT KETAT: Anti-Halusinasi & Anti-Mengarang Kegiatan Fiktif
+const SYSTEM_PROMPT = `Anda adalah asisten formal yang bertugas merapikan laporan harian (Monev) peserta MagangHub Kemnaker menjadi kalimat formal dan baku.
 
-Pedoman Penulisan:
-- Gunakan Bahasa Indonesia baku, profesional, dengan sudut pandang orang pertama ("saya").
-- WAJIB: Setiap field terdiri dari 1 paragraf padat dengan panjang minimal 150 - 350 karakter. Jangan kurang dari 120 karakter.
-- DILARANG menggunakan markdown, bullet points (*, -), simbol angka (1., 2.), atau tanda kutip ganda pembuka/penutup.
-- Jangan mengarang data sensitif/rahasia atau nama klien yang tidak relevan. Kembangkan secara logis dari ranah tugas/posisi yang ditentukan.
-- Kembalikan HANYA format JSON valid dengan key: "uraian", "pembelajaran", "kendala".`;
+ATURAN UTAMA (ANTI-HALUSINASI - SANGAT KETAT):
+1. BERPEGANG TEGUH PADA INPUT USER: Anda HANYA boleh menjelaskan kegiatan yang secara eksplisit ditulis oleh user.
+2. DILARANG KERAS MENGARANG PEKERJAAN TAMBAHAN: Jangan pernah menambahkan aktivitas baru, tugas lain, rapat fiktif, modul lain, atau tools/teknologi spesifik yang sama sekali tidak disebutkan oleh user.
+   - Contoh Salah: User input "perbaikan bug login", AI mengarang "Saya juga menghadiri rapat sprint planning dan melakukan deployment ke server produksi". (INI DILARANG KERAS!)
+   - Contoh Benar: Fokus hanya pada proses analisa bug login, pengecekan alur autentikasi tersebut, pengujian ulang, dan hasil bahwa bug login tersebut berhasil diselesaikan.
+3. CARA MEMENUHI PANJANG KARAKTER (MINIMAL 150-300 KARAKTER):
+   Untuk memenuhi batas panjang karakter, elaborasikan aspek ketelitian kerja, proses pengecekan ulang, kehati-hatian, koordinasi yang relevan, atau validasi hasil dari KEGIATAN ITU SENDIRI, BUKAN dengan mengarang pekerjaan baru.
+
+Format 3 Bagian Laporan:
+- "uraian": Jelaskan apa yang dikerjakan berdasarkan input user, bagaimana langkah fokus penyelesaiannya, dan hasil akhirnya. Tetap jujur pada konteks input.
+- "pembelajaran": Insight, keterampilan, atau pemahaman yang didapat KHUSUS dari kegiatan tersebut (misal pentingnya ketelitian, pemahaman alur sistem, manajemen waktu, dll).
+- "kendala": Kendala realistis yang berkaitan langsung dengan kegiatan itu (misalnya butuh ketelitian lebih, penyesuaian format, atau pengecekan berulang) dan bagaimana cara mengatasinya dengan baik.
+
+Format Bahasa:
+- Bahasa Indonesia baku, sopan, sudut pandang orang pertama ("saya").
+- 1 paragraf padat per kolom, panjang 150–350 karakter.
+- TANPA markdown, TANPA bullet points, TANPA tanda kutip pembuka/penutup.
+- Kembalikan HANYA format JSON murni: {"uraian": "...", "pembelajaran": "...", "kendala": "..."}.`;
 
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
@@ -66,7 +75,7 @@ function cleanOutput(text) {
 }
 
 // -------------------------------------------------------------
-// 1. GOOGLE GEMINI ENGINE (KHUSUS FREE TIER & FLASH)
+// 1. GOOGLE GEMINI ENGINE
 // -------------------------------------------------------------
 
 async function fetchAvailableModels(apiKey) {
@@ -86,7 +95,6 @@ async function fetchAvailableModels(apiKey) {
 
   const models = resJson.models || [];
 
-  // Filter: ambil yang mendukung generateContent dan teks/chat (buang embedding, imagen, tts, aqa)
   const candidateModels = models.filter((m) => {
     const id = (m.name || "").replace(/^models\//, "").toLowerCase();
     const canGenerate = m.supportedGenerationMethods?.includes("generateContent");
@@ -101,7 +109,6 @@ async function fetchAvailableModels(apiKey) {
     return canGenerate && !isExcluded;
   });
 
-  // Urutkan prioritas: Flash models di atas (3.5, 3.8, 3.6, flash-lite, 2.0)
   function scoreModel(id) {
     if (id.includes("3.5-flash")) return 100;
     if (id.includes("3.8-flash")) return 95;
@@ -129,14 +136,14 @@ async function fetchAvailableModels(apiKey) {
   });
 }
 
-async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, temperature = 0.7, timeoutMs = 45000 }) {
+// Temperature diturunkan ke 0.2 agar AI строго faktual dan tidak mengarang bebas
+async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, temperature = 0.2, timeoutMs = 45000 }) {
   if (!apiKey) {
     throw new AIError("API Key Gemini belum diatur. Silakan atur di menu Pengaturan.");
   }
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
 
-  // Pada model reasoning (Gemini 2.5/3.8), set thinkingBudget: 0 agar tidak timeout/berpikir berlebihan
   const payload = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
@@ -168,7 +175,7 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
     clearTimeout(timer);
   }
 
-  // Jika thinkingConfig ditolak oleh model non-reasoning (400 Bad Request), coba ulang tanpa thinkingConfig
+  // Jika thinkingConfig ditolak oleh model tertentu (400 Bad Request), coba ulang tanpa thinkingConfig
   if (!response.ok && response.status === 400 && resJson?.error?.message?.includes("thinking")) {
     delete payload.generationConfig.thinkingConfig;
     const retryRes = await fetch(endpoint, {
@@ -200,7 +207,6 @@ async function callGeminiApi({ apiKey, model, systemPrompt, userPrompt, schema, 
     throw new AIError(`Gemini Error (${response.status}): ${errorMsg}`);
   }
 
-  // Ambil teks dari parts (filter out thought token jika ada)
   const parts = resJson?.candidates?.[0]?.content?.parts || [];
   const textWithoutThoughts = parts
     .filter((p) => !p.thought)
@@ -239,7 +245,7 @@ async function callOpenAICompatibleApi({ baseUrl, apiKey, model, systemPrompt, u
       { role: "system", content: systemPrompt },
       { role: "user", content: `${userPrompt}\n\nIngat: Format balasan WAJIB berupa objek JSON murni: {"uraian": "...", "pembelajaran": "...", "kendala": "..."}` },
     ],
-    temperature: 0.7,
+    temperature: 0.2, // Rendah agar tidak halusinasi
     response_format: { type: "json_object" },
   };
 
@@ -301,7 +307,7 @@ async function generateLaporan({ kegiatan, tanggal = "" }) {
   if (settings.posisi) promptParts.push(`Posisi/Role Peserta: ${settings.posisi}`);
   if (settings.konteks) promptParts.push(`Konteks Bidang/Divisi: ${settings.konteks}`);
   if (tanggal) promptParts.push(`Tanggal Laporan: ${tanggal}`);
-  promptParts.push(`Kegiatan yang dikerjakan hari ini: ${kegiatan}`);
+  promptParts.push(`Kegiatan nyata yang dikerjakan hari ini: ${kegiatan}`);
 
   const userPrompt = promptParts.join("\n");
   let rawJsonText = "";
